@@ -1,0 +1,59 @@
+do not upload whole dataset
+storing tweet?
+storing in chunks rather than individual files
+
+Group project
+    1 student from group needs to submit
+    clearly state dependencies, extra libraries that need to be installed
+        requirements.txt
+        look at the pwoerpoint
+        nump>=1.11.1
+        jupyter
+        ipdb
+    
+Lucene (Phase 2)
+    guys who made Apache, spark, hadoop
+    like Solar
+    search engine library
+        build your own search engine
+    python version: pylucene
+        hard to install!!!?
+    or
+    java version:java Lucene
+    not
+    Solar!
+
+    Lucene Overview:
+        raw content, tweets, websites
+        acquire document>
+            json file {billions of docs}
+            different file_systems
+                document object, each document = 1 file, 1 tweets
+        tokenize document>
+            analyze document
+            remove softwords
+        index document>
+            table of contents
+            what is an index?
+                for every word, have a list of documents
+                can just search the index for a word
+                fetch
+                o(1) accessing time
+            done by Lucene
+        query: pasta
+        search ui
+
+        Lucene Library:
+            Document -> fields(relevant info, author, data,url)
+            String [] pages = {
+                "Sentence 1, document 1"
+                "Document 2"
+            }
+            add a field
+                doc.add(new Field("field_name",document,___))
+
+        Memory Considerations:
+            RAMDirectory
+            FSDirectory
+            places to put the index
+                the index is really big

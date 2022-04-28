@@ -4,7 +4,7 @@
 
 
 
-
+import sys#used to get maxint
 
 #class for empty tile
 #has a position
@@ -101,11 +101,67 @@ class Puzzle:
     #update adjacent_tile's values
 
 
+#class puzzle
+#helper functions:
+#make_puzzle makes a puzzle
+#puzzles are a (size * size) length array with numbers representing tile placements
+#None is used to represent the empty tile
+def make_puzzle(size):
+    puzzle = []
+    for n in range(size*size-1):
+        puzzle.append(n)
+    puzzle.append(None)
+    return puzzle
+def get_empty_tile_pos(puzzle):
+    return puzzle.index(None)#value of none is empty tile
 
+#size, the length/width of the puzzle
+#pos, the reference position, gets adjacent from the reference    
+def get_adjacent_pos(pos,size):
+    row = pos//size
+    col = pos%size
+    max_rowcol_index = size -1
+    adj_pos = []
+    if(row < (max_rowcol_index)):#there is a node below
+        adj_pos.append(pos+size)
+    if(row > 0):#there is a node above
+        adj_pos.append(pos-size)
+    if(col < (max_rowcol_index)):#there is a node to the right
+        adj_pos.append(pos+1)
+    if(col > 0):#there is a node to the left
+        adj_pos.append(pos-1)
+    return adj_pos
+#swaps 2 tiles on a puzzle
+def swap(puzzle,pos1,pos2):
+    puzzle[pos1],puzzle[pos2] = puzzle[pos2],puzzle[pos1]
+class Problem:
+    def __init__(self,size=3):
+        self.known_positions = {}
+        self.unexplored = [make_puzzle(size)]
+        self.explored = []
+        self.size = size
+        self.cost = 0
+        print("Unexplored:", self.unexplored)
+        print("Empty tile pos:", get_empty_tile_pos(self.unexplored[0]))
+        print("Adjacent pos:",get_adjacent_pos(4,3))
+        swap(self.unexplored[0],0,1)
+        print("Swap:",self.unexplored[0])
+        print("maxint: ",sys.maxsize)
+    def explore_next(self):
+        puzzle = self.unexplored.pop()
+        self.explored.append(puzzle)
+        #self.known_positions.get(puzzle,sys.maxsize)
 
+        print("popped:",puzzle)
 
-
-
+        empty_tile_pos = get_empty_tile_pos(puzzle)
+        adj_nodes = get_adjacent_pos(empty_tile_pos,self.size)
+        for node in adj_nodes:
+            copy = puzzle.copy()
+            swap(copy,empty_tile_pos,node)
+            if(copy not in self.explored):
+                self.unexplored.append(copy)
+            print("copy: ",copy)
 
 
 #function to check for solution
@@ -114,11 +170,13 @@ class Puzzle:
             #return false
     #return True
 tile_test = Tile(0,None)
-print("tile_test: (", tile_test.pos, tile_test.val,")")
+#print("tile_test: (", tile_test.pos, tile_test.val,")")
 if (not tile_test.val):
     print("test: tile_test is None")
-print(tile_test)
+#print(tile_test)
 
 puzzle_test = Puzzle(3,8)
-print(puzzle_test)
+#print(puzzle_test)
 
+problem_test = Problem(3)
+problem_test.explore_next()

@@ -58,6 +58,15 @@ def get_next_lowest_cost_puzzle(puzzles):
         count+=1
     return min_index
 
+#puzzle objs, list of Puzzle objects
+#target_puzzle, a puzzle arr
+def get_puzzle(puzzle_objs,target_puzzle):
+    index = 0
+    for puzzle_obj in puzzle_objs:
+        if(target_puzzle == puzzle_obj.puzzle):
+            return index
+        index+=1
+    return None#else return None
 
 
 #PUZZLE CLASS:
@@ -69,11 +78,11 @@ class Puzzle:
     def __init__ (self, puzzle,cost,rows,previous_state):
         self.puzzle = puzzle
         self.cost = cost
-        self.previous_state = previous_state
+        self.previous_state = previous_state#previous obj is set when appending to unexplored
         self.rows = rows
     def __str__(self):
-        puzzle_str = []
-        count+=1
+        puzzle_str = ""
+        count=0
         for i in range(self.rows):
             for j in range(self.rows):
                 puzzle_str += str(self.puzzle[count])+' '
@@ -111,7 +120,7 @@ class Problem:
         #print("Swap:",puzzle)
         #print("maxint: ",sys.maxsize)
 
-    def explore_next(self):
+    def explore_next(self,):
         if not self.unexplored:
             print("ERROR: Cannot reach end position")#no nodes to explore
             print("Len of explored: ",len(self.explored))
@@ -120,21 +129,22 @@ class Problem:
         
         #puzzle,cost = self.unexplored.pop()
         min_index = get_next_lowest_cost_puzzle(self.unexplored)
-        puzzle_popped = self.unexplored.pop(min_index)
-        puzzle,cost = puzzle_popped.puzzle,puzzle_popped.cost
+        puzzle_obj = self.unexplored.pop(min_index)
+        puzzle,cost = puzzle_obj.puzzle,puzzle_obj.cost
 
-        self.explored.append(puzzle_popped)
+        self.explored.append(puzzle_obj)
         cost+=1
        
-        print("popped:",puzzle)
+        print("popped:",puzzle_obj)
 
         empty_tile_pos = get_empty_tile_pos(puzzle)
         adj_nodes = get_adjacent_pos(empty_tile_pos,self.size)
         for node in adj_nodes:
             copy = puzzle.copy()
             swap(copy,empty_tile_pos,node)
-            if(not self.explored.get(tuple(copy),None)):#if its not explored, append to unexplored
-                self.unexplored.append((copy,cost))
+            #
+            if(not get_puzzle(self.explored,copy)):#if its not explored, append to unexplored
+                self.unexplored.append(Puzzle(copy,cost,self.size,puzzle_obj))
 
             print("copy: ",copy,cost)
     def is_solution(self,puzzle):
@@ -166,7 +176,7 @@ class Problem:
 problem_test = Problem(3)
 problem_test.explore_next()
 print("len unexplored: ", len(problem_test.unexplored))
-print("Next pair", get_next_lowest_cost_pair(problem_test.unexplored))
+#print("Next pair", get_next_lowest_cost_pair(problem_test.unexplored))
 
 if([0,1,2]==[0,1,2]):
     print("array equality check")

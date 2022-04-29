@@ -41,23 +41,46 @@ def swap(puzzle,pos1,pos2):
     puzzle[pos1],puzzle[pos2] = puzzle[pos2],puzzle[pos1]
 
 
-#returns a pair from a list of pairs
-def get_next_lowest_cost_pair(list,cost_pos_in_pair = 1):
-    if (not list):
+#returns an index from a list of puzzles
+def get_next_lowest_cost_puzzle(puzzles):
+    if not puzzles:
         return
-    min = list[0][cost_pos_in_pair]
+    min = puzzles[0].cost
     min_index = 0
 
     count = 0
-    for pair in list:
-        cost = pair[1]
+    
+    for puzzle in puzzles:
+        cost = puzzle.cost
         if(cost< min):
             min = cost
             min_index = count
         count+=1
-    return list[min_index]
+    return min_index
 
-#MAIN CLASS:
+
+
+#PUZZLE CLASS:
+#has cost
+#has puzzle
+#has a __str__ function
+#has a pointer to the previous state
+class Puzzle:
+    def __init__ (self, puzzle,cost,rows,previous_state):
+        self.puzzle = puzzle
+        self.cost = cost
+        self.previous_state = previous_state
+        self.rows = rows
+    def __str__(self):
+        puzzle_str = []
+        count+=1
+        for i in range(self.rows):
+            for j in range(self.rows):
+                puzzle_str += str(self.puzzle[count])+' '
+                count+=1
+            puzzle_str+= '\n'
+        return puzzle_str
+#DRIVER CLASS:
 #uses helper functions above
 
 ##important class members:
@@ -73,8 +96,8 @@ class Problem:
     def __init__(self,size=3):
         puzzle = make_puzzle(size)
         #self.known_positions = {}
-        self.unexplored = [(puzzle,0)]
-        self.explored = {}
+        self.unexplored = [Puzzle(puzzle,0,size,None)]
+        self.explored = []
         self.size = size
         #self.cost = 0
         self.solution = get_solution(size)
@@ -95,8 +118,12 @@ class Problem:
             
             return
         
-        puzzle,cost = self.unexplored.pop()
-        self.explored[tuple(puzzle)] = cost #append to explored
+        #puzzle,cost = self.unexplored.pop()
+        min_index = get_next_lowest_cost_puzzle(self.unexplored)
+        puzzle_popped = self.unexplored.pop(min_index)
+        puzzle,cost = puzzle_popped.puzzle,puzzle_popped.cost
+
+        self.explored.append(puzzle_popped)
         cost+=1
        
         print("popped:",puzzle)
@@ -114,8 +141,7 @@ class Problem:
         if(self.solution == puzzle):
             return True
         return False
-    def uniform_cost_search(self):
-        return
+    
     def test(self):
         print("self.explored:")
         for pair in self.explored:
@@ -123,7 +149,16 @@ class Problem:
         puzzle = [1, 0, 2, 3, 4, 5, 6, 7, None]
         
         print("index pos: ",self.explored.get(tuple(puzzle),None))
-        
+    def explore_n_times(self,n):
+        for i in range(n):
+            self.explore_next()
+
+        print("Explored",n," times: ")
+        print("Unexplored: ")
+        for node in self.unexplored:
+            print(node)
+        print(self.explored)
+        return
 
 #function to check for solution
 
@@ -138,3 +173,6 @@ if([0,1,2]==[0,1,2]):
 solution = get_solution(3)
 print("Solution: ",solution)
 print("Is solution?",problem_test.is_solution([0, 1, 2, 3, 4, 5, 6, 7, None]))
+
+problem_test2 = Problem(3)
+problem_test2.explore_n_times(10)

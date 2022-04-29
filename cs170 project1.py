@@ -6,12 +6,7 @@
 
 import sys#used to get maxint
 
-#class for empty tile
-#has a position
-class Empty_Tile:
-    def __init__(self, position):
-        self.position = position
-        self.val = None
+
 
 
 
@@ -106,6 +101,10 @@ class Puzzle:
 #make_puzzle makes a puzzle
 #puzzles are a (size * size) length array with numbers representing tile placements
 #None is used to represent the empty tile
+def get_solution(size):
+    solution = list(range(size*size-1))
+    solution.append(None)
+    return solution
 def make_puzzle(size):
     puzzle = []
     for n in range(size*size-1):
@@ -167,17 +166,21 @@ def get_next_lowest_cost_pair(list,cost_pos_in_pair = 1):
 class Problem:
     def __init__(self,size=3):
         puzzle = make_puzzle(size)
-        self.known_positions = {}
+        #self.known_positions = {}
         self.unexplored = [(puzzle,0)]
         self.explored = {}
         self.size = size
-        self.cost = 0
-        print("Unexplored:", self.unexplored)
-        print("Empty tile pos:", get_empty_tile_pos(puzzle))
-        print("Adjacent pos:",get_adjacent_pos(4,3))
-        swap(puzzle,0,1)
-        print("Swap:",puzzle)
-        print("maxint: ",sys.maxsize)
+        #self.cost = 0
+        self.solution = get_solution(size)
+
+
+
+        #print("Unexplored:", self.unexplored)
+        #print("Empty tile pos:", get_empty_tile_pos(puzzle))
+        #print("Adjacent pos:",get_adjacent_pos(4,3))
+        #swap(puzzle,0,1)
+        #print("Swap:",puzzle)
+        #print("maxint: ",sys.maxsize)
 
     def explore_next(self):
         if not self.unexplored:
@@ -185,14 +188,11 @@ class Problem:
             print("Len of explored: ",len(self.explored))
             
             return
-        else:
-            puzzle,cost = self.unexplored.pop()
-      
         
-        self.explored[tuple(puzzle)] = cost
+        puzzle,cost = self.unexplored.pop()
+        self.explored[tuple(puzzle)] = cost #append to explored
         cost+=1
-        #self.known_positions.get(puzzle,sys.maxsize)
-
+       
         print("popped:",puzzle)
 
         empty_tile_pos = get_empty_tile_pos(puzzle)
@@ -202,9 +202,14 @@ class Problem:
             swap(copy,empty_tile_pos,node)
             if(not self.explored.get(tuple(copy),None)):#if its not explored, append to unexplored
                 self.unexplored.append((copy,cost))
-            #if(copy not in self.explored):
-                #self.unexplored.append((copy,cost))
+
             print("copy: ",copy,cost)
+    def is_solution(self,puzzle):
+        if(self.solution == puzzle):
+            return True
+        return False
+    def uniform_cost_search(self):
+        return
     def test(self):
         print("self.explored:")
         for pair in self.explored:
@@ -233,3 +238,7 @@ problem_test.explore_next()
 print("len unexplored: ", len(problem_test.unexplored))
 print("Next pair", get_next_lowest_cost_pair(problem_test.unexplored))
 
+if([0,1,2]==[0,1,2]):
+    print("array equality check")
+solution = get_solution(3)
+print("Solution: ",solution)

@@ -88,6 +88,7 @@ class Puzzle:
                 puzzle_str += str(self.puzzle[count])+' '
                 count+=1
             puzzle_str+= '\n'
+        puzzle_str += "c: "+str(self.cost) + '\n'  
         return puzzle_str
 #DRIVER CLASS:
 #uses helper functions above
@@ -102,14 +103,19 @@ class Puzzle:
 
 #explored,unexplored are dictionaries in the form of list:cost 
 class Problem:
-    def __init__(self,size=3):
-        puzzle = make_puzzle(size)
+    
+    def __init__(self,size=3,user_puzzle = None):
+        if(not user_puzzle):
+            puzzle = make_puzzle(size)
+        else:
+            puzzle = user_puzzle
         #self.known_positions = {}
         self.unexplored = [Puzzle(puzzle,0,size,None)]
         self.explored = []
         self.size = size
         #self.cost = 0
         self.solution = get_solution(size)
+        self.found_solution = None
 
 
 
@@ -119,6 +125,22 @@ class Problem:
         #swap(puzzle,0,1)
         #print("Swap:",puzzle)
         #print("maxint: ",sys.maxsize)
+    def is_solution(self,puzzle):
+        if(self.solution == puzzle): 
+            return True
+        return False
+
+    #done after finding the solution
+    #trace back the puzzles until None state
+    def trace_back(self):
+        puzzle_obj_list = []
+        if(not self.found_solution):
+            return
+        current_puzzle_obj = self.found_solution
+        while(current_puzzle_obj != None):
+            puzzle_obj_list.append(current_puzzle_obj)
+            current_puzzle_obj = current_puzzle_obj.found_solution
+        return puzzle_obj_list
 
     def explore_next(self,):
         if not self.unexplored:
@@ -142,15 +164,17 @@ class Problem:
         for node in adj_nodes:
             copy = puzzle.copy()
             swap(copy,empty_tile_pos,node)
-            #
+            
+            if(self.is_solution(copy)):#check for solution
+                print("Solution Found: ")
+                self.found_solution = Puzzle(copy,cost,self.size,puzzle_obj)
+                return
+
             if(not get_puzzle(self.explored,copy)):#if its not explored, append to unexplored
                 self.unexplored.append(Puzzle(copy,cost,self.size,puzzle_obj))
 
             print("copy: ",copy,cost)
-    def is_solution(self,puzzle):
-        if(self.solution == puzzle):
-            return True
-        return False
+
     
     def test(self):
         print("self.explored:")
@@ -169,20 +193,40 @@ class Problem:
             print(node)
         print(self.explored)
         return
+    def uniform_cost_search(self,upper_limit = 10000):
+        iterations = 0
+        while(not self.found_solution and iterations < upper_limit):
+            self.explore_next()
+        if(self.found_solution):
+            puzzle_obj_list = self.trace_back()
+            for puzzle in puzzle_obj_list:
+                print(puzzle)
+            print("Found solution cost: ",self.found_solution.cost)
+        return
+
+
 
 #function to check for solution
 
 
 problem_test = Problem(3)
-problem_test.explore_next()
-print("len unexplored: ", len(problem_test.unexplored))
+#problem_test.explore_next()
+#print("len unexplored: ", len(problem_test.unexplored))
 #print("Next pair", get_next_lowest_cost_pair(problem_test.unexplored))
 
-if([0,1,2]==[0,1,2]):
-    print("array equality check")
+#if([0,1,2]==[0,1,2]):
+    #print("array equality check")
 solution = get_solution(3)
-print("Solution: ",solution)
-print("Is solution?",problem_test.is_solution([0, 1, 2, 3, 4, 5, 6, 7, None]))
+#print("Solution: ",solution)
+#print("Is solution?",problem_test.is_solution([0, 1, 2, 3, 4, 5, 6, 7, None]))
 
-problem_test2 = Problem(3)
-problem_test2.explore_n_times(10)
+#problem_test2 = Problem(3)
+#problem_test2.explore_n_times(10)
+
+
+hardest_puzzle = [8, 6, 7, 2, 5, 4, 3, None, 1]
+#problem_test3 = Problem(3,hardest_puzzle) #DO NOT DO THIS, depth 30 is ~>1 billion states 2^30
+
+                                        #6 mins gives depth 20
+#problem_test3.uniform_cost_search()
+#problem_test3.explore_n_times(10)

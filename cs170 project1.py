@@ -106,24 +106,31 @@ class Puzzle:
 #unexplored, a list of Puzzles
 
 
-#explored,unexplored are dictionaries in the form of list:cost 
 UNIFORM_COST_SEARCH = 0
 A_STAR_SEARCH_MISPLACED = 1
 A_STAR_SEARCH_EUCLIDEAN = 2
 class Problem:
-    
+    def is_solution(self,puzzle):
+        if(self.solution == puzzle): 
+            return True
+        return False
     def __init__(self,size=3,user_puzzle = None):
         if(not user_puzzle):
             puzzle = make_puzzle(size)
         else:
             puzzle = user_puzzle
-        #self.known_positions = {}
+
         self.unexplored = [Puzzle(puzzle,0,size,None,0)]
         self.explored = []
         self.size = size
-        #self.cost = 0
+
         self.solution = get_solution(size)
-        self.found_solution = None
+
+        #check if the puzzle is the solution
+        if(self.is_solution(puzzle)):
+            self.found_solution = Puzzle(puzzle,0,size,None,0)
+        else:
+            self.found_solution = None
 
 
 
@@ -133,10 +140,7 @@ class Problem:
         #swap(puzzle,0,1)
         #print("Swap:",puzzle)
         #print("maxint: ",sys.maxsize)
-    def is_solution(self,puzzle):
-        if(self.solution == puzzle): 
-            return True
-        return False
+    
 
     #done after finding the solution
     #trace back the puzzles until None state
@@ -149,6 +153,10 @@ class Problem:
             puzzle_obj_list.append(current_puzzle_obj)
             current_puzzle_obj = current_puzzle_obj.parent
         return puzzle_obj_list
+    def print_trace_back(self):
+        puzzle_objs = self.trace_back()
+        for puzzle in puzzle_objs:
+            print(puzzle)
 
     #gets the number of misplaced tiles
     def get_num_misplaced_tiles(self,puzzle):
@@ -159,6 +167,23 @@ class Problem:
                 num_misplaced_tiles+=1
         return num_misplaced_tiles
 
+
+    #for each position in the puzzle, gets the value and row/col # and finds the correct row/col given the value
+    def get_euclidean_dists(self,puzzle):
+        euclidean_dists = 0
+
+        for n in range(len(self.solution)):
+            val = puzzle[n]
+            row,col = n//self.size , n%self.size
+
+            correct_pos = self.solution.index(val)
+            correct_row,correct_col = correct_pos//self.size, correct_pos%self.size
+
+            euclidean_dist = ((correct_row-row)**2 + (correct_col-col)**2) **(1/2)#euclidean distance formula
+            euclidean_dists += euclidean_dist
+        return euclidean_dists
+    
+
     #calculates cost of a node before appending it to unexplored
     def get_new_cost(self,old_cost,puzzle,num_moves,mode = UNIFORM_COST_SEARCH):
         new_cost= old_cost
@@ -166,6 +191,10 @@ class Problem:
             new_cost+=1
         elif(mode==A_STAR_SEARCH_MISPLACED):
             new_cost = num_moves+self.get_num_misplaced_tiles(puzzle)
+        elif(mode==A_STAR_SEARCH_EUCLIDEAN):
+            new_cost = num_moves+self.get_euclidean_dists(puzzle)
+        else:#uniform cost search
+            new_cost+=1
         return new_cost
     
     def explore_next(self,mode = UNIFORM_COST_SEARCH):
@@ -178,7 +207,7 @@ class Problem:
         #puzzle,cost = self.unexplored.pop()
         min_index = get_next_lowest_cost_puzzle(self.unexplored)
         puzzle_obj = self.unexplored.pop(min_index)
-        puzzle,cost,num_moves = puzzle_obj.puzzle,puzzle_obj.cost,puzzle_obj.num_moves
+        puzzle,cost,num_moves = puzzle_obj.puzzle, puzzle_obj.cost, puzzle_obj.num_moves
 
         self.explored.append(puzzle_obj)
         
@@ -196,7 +225,7 @@ class Problem:
             new_cost = self.get_new_cost(cost,copy,num_moves,mode)#gets the new cost of a node
             
             if(self.is_solution(copy)):#check copies for solution before appending to frontier
-                print("Solution Found: ")
+                #print("Solution Found: ")
                 self.found_solution = Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves)
                 
 
@@ -228,16 +257,20 @@ class Problem:
         while(not self.found_solution and iterations < upper_limit and self.unexplored):
             self.explore_next()
             iterations+=1
+
+        
+        #traceback, optional same as print_trace_back
         if(self.found_solution):
-            puzzle_obj_list = self.trace_back()
-            for puzzle in puzzle_obj_list:
-                print(puzzle)
+            #puzzle_obj_list = self.trace_back()
+            #for puzzle in puzzle_obj_list:
+            #    print(puzzle)
+            print("Uniform Cost Search:")
             print("Found solution cost: ",self.found_solution.cost)
         print("Length explored: ",len(self.explored))
         print("Length unexplored: ", len(self.unexplored))
+        print("")
 
-
-        return
+        return len(self.explored),len(self.unexplored)
     def a_star_search(self,upper_limit = 10000):
         iterations = 0
         
@@ -245,16 +278,55 @@ class Problem:
         while(not self.found_solution and iterations < upper_limit and self.unexplored):
             self.explore_next(A_STAR_SEARCH_MISPLACED)
             iterations+=1
+
+        print("A* Search Misplaced Tiles:")
+        #traceback, optional
         if(self.found_solution):
-            puzzle_obj_list = self.trace_back()
-            for puzzle in puzzle_obj_list:
-                print(puzzle)
+            #puzzle_obj_list = self.trace_back()
+            #for puzzle in puzzle_obj_list:
+                #print(puzzle)
             print("Found solution cost: ",self.found_solution.cost)
         print("Length explored: ",len(self.explored))
         print("Length unexplored: ", len(self.unexplored))
         print("")
+        return len(self.explored),len(self.unexplored)
+    def a_star_search_euclidean(self,upper_limit = 10000):
+        iterations = 0
+        
+        #continues exploring until finding a solution, reaching the upper limit, or not having any unexplored nodes left
+        while(not self.found_solution and iterations < upper_limit and self.unexplored):
+            self.explore_next(A_STAR_SEARCH_EUCLIDEAN)
+            iterations+=1
+            
+        print("A* Search Euclidean:")
+        #traceback, optional
+        if(self.found_solution):
+            #puzzle_obj_list = self.trace_back()
+            #for puzzle in puzzle_obj_list:
+                #print(puzzle)
+            print("Found solution cost: ",self.found_solution.cost)
+        print("Length explored: ",len(self.explored))
+        print("Length unexplored: ", len(self.unexplored))
+        print("")
+        return len(self.explored),len(self.unexplored)
+    
+def test_each_search(puzzles,rows=3):
+    count =0
+    for puzzle in puzzles:
+        puzzle_obj = Puzzle(puzzle,0,rows,None,0)#puzzle obj just to print and call str(Puzzle)
+        print("Puzzle no: ",count,"\n",puzzle_obj)
 
+        problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
+        problem_obj.uniform_cost_search()
+        
 
+        problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
+        problem_obj.a_star_search()
+
+        problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
+        problem_obj.a_star_search_euclidean()
+        print("Traceback:")
+        problem_obj.print_trace_back()
 
 
 #function to check for solution
@@ -275,12 +347,22 @@ solution = get_solution(3)
 #problem_test2.explore_n_times(10)
 
 
-hardest_puzzle = [8, 6, 7, 2, 5, 4, 3, None, 1]
+hardest_puzzle = [8, 6, 7, 2, 5, 4, 3, None, 1]#DO NOT DO THIS, depth 30 might take forever with ucs, #6 mins gives depth 20
 zero_move_puzzle = [1,2,3,4,5,6,7,8,None]
 two_move_puzzle = [1,2,3,4,None,6,7,5,8]
 four_move_puzzle = [None,1,3,4,2,6,7,5,8]
-#problem_test3 = Problem(3,hardest_puzzle) #DO NOT DO THIS, depth 30 is ~>1 billion states 2^30, #6 mins gives depth 20
+#problem_test3 = Problem(3,hardest_puzzle) 
 problem_test3 = Problem(3,four_move_puzzle)
 print("Solution:",problem_test3.solution)            
 #problem_test3.uniform_cost_search()
-problem_test3.a_star_search()
+#problem_test3.a_star_search_euclidean()
+#print("Euclidean Dists: ",problem_test3.get_euclidean_dists())
+
+trivial = [1,2,3,4,5,6,7,8,None]
+easy = [1,2,None,4,5,3,7,8,6]
+very_easy = [1,2,3,4,5,6,7,None,8]
+doable = [None,1,2,4,5,3,7,8,6]
+oh_boy  =[8,7,1,6,None,2,5,4,3]
+
+print("Each search:",test_each_search([oh_boy]))
+

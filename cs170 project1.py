@@ -360,6 +360,18 @@ class Problem:
         print("Total Length, (nodes in memory):",len(self.explored)+len(self.unexplored))
         print("")
         return (iterations == upper_limit)
+
+    #call the other searches
+    def do_search(self,mode=UNIFORM_COST_SEARCH,upper_limit=10000):
+        ret = 0
+        if(mode == UNIFORM_COST_SEARCH):
+            ret = self.uniform_cost_search(upper_limit)
+        elif(mode == A_STAR_SEARCH_MISPLACED):
+            ret =self.a_star_search_misplaced(upper_limit)
+        elif(mode == A_STAR_SEARCH_EUCLIDEAN):
+            ret = self.a_star_search_euclidean(upper_limit)
+        else:
+            ret = self.uniform_cost_search(upper_limit)
     
 def test_each_search(puzzles,rows=3):
     count =0
@@ -381,6 +393,10 @@ def test_each_search(puzzles,rows=3):
         print("Traceback:")
         problem_obj.print_trace_back()
     return problem_obj #a star euclidean object
+
+
+
+
 
 
 #function to check for solution
@@ -457,7 +473,19 @@ while(user_input != 'q'):
     user_puzzle_obj = Puzzle(puzzle,0,3,None,0)
     print("Your puzzle is: \n",user_puzzle_obj)
     print("What type of search would you like to do?")
-    print(search_menu)
+    user_input = int(input(search_menu))
+
+    user_problem = Problem(3,puzzle)
+    reached_upper_limit = user_problem.do_search(user_input)
+    if(reached_upper_limit):
+        print("Could not find solution explored the upper limit (default 10,000) nodes")
+    else:
+        user_input = input("Would you like the traceback? (y/n): ")
+        if(user_input == 'y'):
+            user_problem.print_trace_back()
+            user_input = input("Type anything to continue...")
+        
+        
 
     
 

@@ -205,11 +205,21 @@ class Problem:
             return
         
         #puzzle,cost = self.unexplored.pop()
+        
         min_index = get_next_lowest_cost_puzzle(self.unexplored)
         puzzle_obj = self.unexplored.pop(min_index)
         puzzle,cost,num_moves = puzzle_obj.puzzle, puzzle_obj.cost, puzzle_obj.num_moves
 
+        print("Exploring: \n",puzzle_obj)
+
         self.explored.append(puzzle_obj)
+
+        if(self.found_solution): #already found solution, cull node if impossible for node to get better solution
+            if(num_moves >= (self.found_solution.num_moves-1)): #if the current node is 13 moves, cannot find a better solution from this node
+                return
+            #discard node
+
+        
         
         #print("popped:",puzzle_obj)
 
@@ -217,6 +227,7 @@ class Problem:
         adj_nodes = get_adjacent_pos(empty_tile_pos,self.size)
         num_moves+=1#new num_moves
 
+        print("Appending possible moves to the frontier:")
         for node in adj_nodes: #make new puzzles(copies) from the possible moves
             copy = puzzle.copy()#make a new list
             swap(copy,empty_tile_pos,node)
@@ -225,19 +236,55 @@ class Problem:
             new_cost = self.get_new_cost(cost,copy,num_moves,mode)#gets the new cost of a node
             
             if(self.is_solution(copy)):#check copies for solution before appending to frontier
-                #print("Solution Found: ")
-                self.found_solution = Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves)
                 
+                self.found_solution = Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves)
+                print("******************************************************")
+                print("Found Solution, Trying to find better solution:\n******************************************************\n",self.found_solution)
 
             if(not get_puzzle(self.explored,copy)):#if its not explored, append to unexplored
-                self.unexplored.append(Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves))
+                if(not self.found_solution):
+                    self.unexplored.append(Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves))
+                    print(Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves))
+                elif(num_moves<(self.found_solution.num_moves-2)):
+                    #found solution, do not add nodes that cannot find a better solution
+                    #if solution is 14, expanding a 12 move node can find a 13 move solution, but do not add 13 move nodes to unexplored
+                    #12 !< 14-2
+                    #11 < 14-2
+                    self.unexplored.append(Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves))
+                    print(Puzzle(copy,new_cost,self.size,puzzle_obj,num_moves))
 
-            #print("copy: ",copy,cost)
+                else:
+                    return
+        print('-----------------------------------')
+        return
 
-    
-    
-        
-        
+
+       
+    #cull_obsolete_unexplored
+    #only used for diagnostics
+    #found the solution already, cull unexplored, cannot have better solutions with more moves than the found solution
+    def cull_obsolete_unexplored(self):
+        if (not self.found_solution):
+            return
+
+        #if solution is 14 moves, exploring any 13 move or above states cannot improve the solution
+        num_moves_threshold = self.found_solution.num_moves-1
+
+        index = 0
+        len_before = len(self.unexplored)
+        for puzzle_obj in self.unexplored:
+            num_moves = puzzle_obj.num_moves
+            
+            
+            if(num_moves >= num_moves_threshold ):
+                self.unexplored.pop(index)
+                print("popping: ", puzzle_obj)
+                index-=1
+            index+=1
+        len_after = len(self.unexplored)
+        print ("End of Cull, Before: ",len_before," after: ",len_after)
+        return len_before,len_after
+
 
     #not used, only for testing
     def explore_n_times(self,n):
@@ -251,6 +298,7 @@ class Problem:
         print(self.explored)
         return
 
+    #all searches will return whether the maximum iterations has been reached
     #only goes to the first solution, guaranteed to be the best
     def uniform_cost_search(self,upper_limit = 10000):
         iterations = 0
@@ -265,17 +313,18 @@ class Problem:
             #for puzzle in puzzle_obj_list:
             #    print(puzzle)
             print("Uniform Cost Search:")
-            print("Found solution cost: ",self.found_solution.cost)
+            print("Found solution cost, (depth): ",self.found_solution.cost)
         print("Length explored: ",len(self.explored))
         print("Length unexplored: ", len(self.unexplored))
+        print("Total Length, (nodes in memory):",len(self.explored)+len(self.unexplored))
         print("")
 
-        return len(self.explored),len(self.unexplored)
-    def a_star_search(self,upper_limit = 10000):
+        return (iterations == upper_limit)
+    def a_star_search_misplaced(self,upper_limit = 10000):
         iterations = 0
         
         #continues exploring until finding a solution, reaching the upper limit, or not having any unexplored nodes left
-        while(not self.found_solution and iterations < upper_limit and self.unexplored):
+        while(iterations < upper_limit and self.unexplored):
             self.explore_next(A_STAR_SEARCH_MISPLACED)
             iterations+=1
 
@@ -285,16 +334,17 @@ class Problem:
             #puzzle_obj_list = self.trace_back()
             #for puzzle in puzzle_obj_list:
                 #print(puzzle)
-            print("Found solution cost: ",self.found_solution.cost)
+            print("Found solution cost, (depth): ",self.found_solution.cost)
         print("Length explored: ",len(self.explored))
         print("Length unexplored: ", len(self.unexplored))
+        print("Total Length, (nodes in memory):",len(self.explored)+len(self.unexplored))
         print("")
-        return len(self.explored),len(self.unexplored)
+        return (iterations == upper_limit)
     def a_star_search_euclidean(self,upper_limit = 10000):
         iterations = 0
         
-        #continues exploring until finding a solution, reaching the upper limit, or not having any unexplored nodes left
-        while(not self.found_solution and iterations < upper_limit and self.unexplored):
+        #continues exploring until reaching the upper limit, or not having any unexplored nodes left
+        while(iterations < upper_limit and self.unexplored):
             self.explore_next(A_STAR_SEARCH_EUCLIDEAN)
             iterations+=1
             
@@ -304,14 +354,16 @@ class Problem:
             #puzzle_obj_list = self.trace_back()
             #for puzzle in puzzle_obj_list:
                 #print(puzzle)
-            print("Found solution cost: ",self.found_solution.cost)
+            print("Found solution cost, (depth): ",self.found_solution.cost)
         print("Length explored: ",len(self.explored))
         print("Length unexplored: ", len(self.unexplored))
+        print("Total Length, (nodes in memory):",len(self.explored)+len(self.unexplored))
         print("")
-        return len(self.explored),len(self.unexplored)
+        return (iterations == upper_limit)
     
 def test_each_search(puzzles,rows=3):
     count =0
+    problem_obj = None
     for puzzle in puzzles:
         puzzle_obj = Puzzle(puzzle,0,rows,None,0)#puzzle obj just to print and call str(Puzzle)
         print("Puzzle no: ",count,"\n",puzzle_obj)
@@ -321,12 +373,14 @@ def test_each_search(puzzles,rows=3):
         
 
         problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
-        problem_obj.a_star_search()
+        problem_obj.a_star_search_misplaced()
+        
 
         problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
         problem_obj.a_star_search_euclidean()
         print("Traceback:")
         problem_obj.print_trace_back()
+    return problem_obj #a star euclidean object
 
 
 #function to check for solution
@@ -351,18 +405,60 @@ hardest_puzzle = [8, 6, 7, 2, 5, 4, 3, None, 1]#DO NOT DO THIS, depth 30 might t
 zero_move_puzzle = [1,2,3,4,5,6,7,8,None]
 two_move_puzzle = [1,2,3,4,None,6,7,5,8]
 four_move_puzzle = [None,1,3,4,2,6,7,5,8]
-#problem_test3 = Problem(3,hardest_puzzle) 
-problem_test3 = Problem(3,four_move_puzzle)
-print("Solution:",problem_test3.solution)            
-#problem_test3.uniform_cost_search()
-#problem_test3.a_star_search_euclidean()
-#print("Euclidean Dists: ",problem_test3.get_euclidean_dists())
+eleven_move_puzzle = [4,None,1,7,2,3,5,8,6]
 
 trivial = [1,2,3,4,5,6,7,8,None]
 easy = [1,2,None,4,5,3,7,8,6]
 very_easy = [1,2,3,4,5,6,7,None,8]
 doable = [None,1,2,4,5,3,7,8,6]
 oh_boy  =[8,7,1,6,None,2,5,4,3]
+submission_puzzle = [1,None,3,4,2,6,7,5,8]
 
-print("Each search:",test_each_search([oh_boy]))
+#problem_test3 = Problem(3,hardest_puzzle) 
+problem_test3 = Problem(3,submission_puzzle)
+#problem_test3.a_star_search_euclidean()
+
+#print("Solution:",problem_test3.solution)            
+#problem_test3.uniform_cost_search()
+#problem_test3.a_star_search_euclidean()
+#print("Euclidean Dists: ",problem_test3.get_euclidean_dists())
+
+
+
+#problem_test4 = test_each_search([eleven_move_puzzle])
+
+#problem_test4.cull_obsolete_unexplored()
+
+user_input = ""
+print("Welcome to Harris Shepard, 862132345 8 puzzle program")
+print("Default parameters:")
+print("Smallest Tile value: 1")
+print("'None' for Empty tile, (enter empty tiles as * please)")
+print("q to quit\n")
+
+user_puzzle = []
+search_menu = "0: UNIFORM_COST_SEARCH:\n1: A* SEARCH MISPLACED\n2: A* SEARCH EUCLIDEAN\n:"
+while(user_input != 'q'):
+
+    user_input = input("Enter a puzzle as a list\nExample: 1 2 3 4 5 6 7 8 *\nor 'q' to quit\n: ")
+    if(user_input == 'q'):
+        break
+    puzzle = user_input.split()
+    #replace the star with a None
+    count = 0
+    #print(len(puzzle))
+    for letter in puzzle:
+        if letter == "*":
+            puzzle[count] = None
+        else:
+            puzzle[count] = int(letter)
+        count+=1
+
+    user_puzzle_obj = Puzzle(puzzle,0,3,None,0)
+    print("Your puzzle is: \n",user_puzzle_obj)
+    print("What type of search would you like to do?")
+    print(search_menu)
+
+    
+
 

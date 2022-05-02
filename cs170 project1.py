@@ -1,6 +1,7 @@
 #name: Harris Shepard
 #8 Puzzle Problem
 #Uniform Cost Search
+#5/1/2022
 
 
 
@@ -214,10 +215,11 @@ class Problem:
 
         self.explored.append(puzzle_obj)
 
+        #discard node
         if(self.found_solution): #already found solution, cull node if impossible for node to get better solution
-            if(num_moves >= (self.found_solution.num_moves-1)): #if the current node is 13 moves, cannot find a better solution from this node
+            if(num_moves >= (self.found_solution.num_moves-1)): 
                 return
-            #discard node
+            
 
         
         
@@ -373,7 +375,7 @@ class Problem:
         else:
             ret = self.uniform_cost_search(upper_limit)
     
-def test_each_search(puzzles,rows=3):
+def test_each_search(puzzles,rows=3,upper_limit=30000):
     count =0
     problem_obj = None
     for puzzle in puzzles:
@@ -381,15 +383,15 @@ def test_each_search(puzzles,rows=3):
         print("Puzzle no: ",count,"\n",puzzle_obj)
 
         problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
-        problem_obj.uniform_cost_search()
+        problem_obj.uniform_cost_search(upper_limit)
         
 
         problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
-        problem_obj.a_star_search_misplaced()
+        problem_obj.a_star_search_misplaced(upper_limit)
         
 
         problem_obj = Problem(rows,puzzle)# make a problem object per search, stored explored, unexplored
-        problem_obj.a_star_search_euclidean()
+        problem_obj.a_star_search_euclidean(upper_limit)
         print("Traceback:")
         problem_obj.print_trace_back()
     return problem_obj #a star euclidean object
@@ -431,8 +433,8 @@ oh_boy  =[8,7,1,6,None,2,5,4,3]
 submission_puzzle = [1,None,3,4,2,6,7,5,8]
 
 #problem_test3 = Problem(3,hardest_puzzle) 
-problem_test3 = Problem(3,submission_puzzle)
-#problem_test3.a_star_search_euclidean()
+problem_test3 = Problem(3,oh_boy)
+#problem_test3.uniform_cost_search(30000)
 
 #print("Solution:",problem_test3.solution)            
 #problem_test3.uniform_cost_search()
@@ -440,10 +442,9 @@ problem_test3 = Problem(3,submission_puzzle)
 #print("Euclidean Dists: ",problem_test3.get_euclidean_dists())
 
 
-
-#problem_test4 = test_each_search([eleven_move_puzzle])
-
-#problem_test4.cull_obsolete_unexplored()
+#----------------------------------------------------
+#PUT IN A PUZZLE FROM ABOVE TO TEST AND UNCOMMENT TO TEST!
+#test_each_search([oh_boy])
 
 user_input = ""
 print("Welcome to Harris Shepard, 862132345 8 puzzle program")
